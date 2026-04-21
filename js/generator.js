@@ -2,7 +2,7 @@
 
 // Generate PDF report
 async function generateZakatPDF() {
-    // Get latest data
+    // Get latest data from calculator
     const data = window.getCurrentZakatData ? window.getCurrentZakatData() : window.calculateZakat();
     const assets = data.assetsBreakdown;
     const debtsVal = data.liabilitiesBreakdown.debts;
@@ -10,21 +10,26 @@ async function generateZakatPDF() {
     // Show loading state on button
     const pdfBtn = document.getElementById('pdfBtn');
     const originalBtnText = pdfBtn.innerHTML;
-    pdfBtn.innerHTML = '<i class="fas fa-spinner pdf-loading"></i> Generating PDF...';
+    pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
     pdfBtn.disabled = true;
     
     try {
+        // Check if jsPDF is loaded
+        if (typeof window.jspdf === 'undefined') {
+            throw new Error('jsPDF library not loaded. Please check your internet connection.');
+        }
+        
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         
-        // Header with gradient effect
+        // Header
         doc.setFillColor(34, 197, 94);
-        doc.rect(0, 0, 210, 28, 'F');
+        doc.rect(0, 0, 210, 30, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
+        doc.setFontSize(20);
         doc.setFont("helvetica", "bold");
         doc.text("Zakat Calculator Report", 105, 16, { align: "center" });
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setTextColor(240, 240, 240);
         doc.text("زکوٰۃ کیلکولیٹر | Islamic Wealth Assessment", 105, 24, { align: "center" });
         
@@ -37,100 +42,147 @@ async function generateZakatPDF() {
         doc.setTextColor(60, 60, 60);
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
-        doc.text(`Generated on: ${formattedDateTime}`, 14, 38);
+        doc.text(`Generated on: ${formattedDateTime}`, 14, 40);
         
-        // Summary Section
-        doc.setFontSize(13);
+        // Summary Section Title
+        doc.setFontSize(14);
         doc.setTextColor(21, 128, 61);
         doc.setFont("helvetica", "bold");
-        doc.text("Calculation Summary", 14, 52);
+        doc.text("Calculation Summary", 14, 55);
+        
+        // Draw line
+        doc.setDrawColor(34, 197, 94);
+        doc.line(14, 58, 196, 58);
         
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.setFont("helvetica", "normal");
         
-        // Main summary table
-        const summaryData = [
-            ["Total Assets (PKR)", window.formatPKR(data.totalAssets)],
-            ["Total Liabilities (PKR)", window.formatPKR(data.totalLiabilities)],
-            ["Net Zakatable Wealth (PKR)", window.formatPKR(data.netWealth)],
-            ["Zakat Due (2.5%)", window.formatPKR(data.zakatDue)],
-            ["Monthly Equivalent (Zakat ÷ 12)", window.formatPKR(data.monthlyEquivalent)],
-            ["Nisab Threshold", `PKR ${window.formatPKR(data.nisabThreshold)}`],
-            ["Status", data.netWealth >= data.nisabThreshold ? "✅ Nisab met - Zakat obligatory" : "⚠️ Below Nisab (Zakat not obligatory)"]
-        ];
+        // Summary data rows (Y position starting)
+        let yPos = 68;
+        const lineHeight = 8;
         
-        doc.autoTable({
-            startY: 56,
-            head: [["Description", "Amount / Status"]],
-            body: summaryData,
-            theme: 'striped',
-            headStyles: { fillColor: [46, 125, 50], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10 },
-            alternateRowStyles: { fillColor: [240, 250, 240] },
-            margin: { left: 14, right: 14 },
-            columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 'auto' } }
-        });
+        // Helper to add summary row
+        function addSummaryRow(label, value, y) {
+            doc.setFont("helvetica", "bold");
+            doc.text(label, 20, y);
+            doc.setFont("helvetica", "normal");
+            doc.text(value, 180, y, { align: "right" });
+            return y + lineHeight;
+        }
         
-        let finalY = doc.lastAutoTable.finalY + 10;
+        yPos = addSummaryRow("Total Assets (PKR):", `PKR ${window.formatPKR(data.totalAssets)}`, yPos);
+        yPos = addSummaryRow("Total Liabilities (PKR):", `PKR ${window.formatPKR(data.totalLiabilities)}`, yPos);
+        yPos = addSummaryRow("Net Zakatable Wealth (PKR):", `PKR ${window.formatPKR(data.netWealth)}`, yPos);
+        yPos = addSummaryRow("", "", yPos + 3);
         
-        // Detailed Assets & Liabilities Table
-        doc.setFontSize(12);
-        doc.setTextColor(21, 128, 61);
+        // Highlight Zakat Due
+        doc.setFillColor(220, 250, 220);
+        doc.rect(14, yPos - 5, 182, 12, 'F');
         doc.setFont("helvetica", "bold");
-        doc.text("Detailed Assets & Liabilities", 14, finalY);
-        finalY += 6;
+        doc.setTextColor(21, 128, 61);
+        doc.text("Zakat Due (2.5%):", 20, yPos);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0, 100, 0);
+        doc.text(`PKR ${window.formatPKR(data.zakatDue)}`, 180, yPos, { align: "right" });
+        yPos = yPos + lineHeight;
         
-        const assetRows = [
-            ["Cash & Bank Savings", window.formatPKR(assets.cash)],
-            ["Gold Value", window.formatPKR(assets.gold)],
-            ["Silver Value", window.formatPKR(assets.silver)],
-            ["Business Inventory", window.formatPKR(assets.inventory)],
-            ["Receivables / Loans Owed", window.formatPKR(assets.receivables)],
-            ["🔻 Debts / Loans Payable", window.formatPKR(debtsVal)]
+        doc.setTextColor(0, 0, 0);
+        yPos = addSummaryRow("Monthly Equivalent:", `PKR ${window.formatPKR(data.monthlyEquivalent)}`, yPos);
+        yPos = addSummaryRow("Nisab Threshold:", `PKR ${window.formatPKR(data.nisabThreshold)}`, yPos);
+        
+        // Status
+        const statusText = data.netWealth >= data.nisabThreshold ? "✅ Nisab met - Zakat obligatory" : "⚠️ Below Nisab (Zakat not obligatory)";
+        doc.setTextColor(data.netWealth >= data.nisabThreshold ? 34 : 194, data.netWealth >= data.nisabThreshold ? 197 : 65, data.netWealth >= data.nisabThreshold ? 94 : 25);
+        doc.setFont("helvetica", "bold");
+        doc.text("Status:", 20, yPos);
+        doc.text(statusText, 180, yPos, { align: "right" });
+        
+        yPos = yPos + lineHeight + 8;
+        
+        // Detailed Assets & Liabilities Section
+        doc.setTextColor(21, 128, 61);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Detailed Assets & Liabilities", 14, yPos);
+        yPos = yPos + 5;
+        doc.setDrawColor(34, 197, 94);
+        doc.line(14, yPos, 196, yPos);
+        yPos = yPos + 8;
+        
+        // Table headers
+        doc.setFillColor(100, 116, 139);
+        doc.rect(14, yPos - 5, 120, 10, 'F');
+        doc.rect(134, yPos - 5, 62, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.text("Item", 20, yPos);
+        doc.text("Amount (PKR)", 140, yPos, { align: "right" });
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "normal");
+        yPos = yPos + 8;
+        
+        const detailItems = [
+            { label: "Cash & Bank Savings", value: assets.cash },
+            { label: "Gold Value", value: assets.gold },
+            { label: "Silver Value", value: assets.silver },
+            { label: "Business Inventory", value: assets.inventory },
+            { label: "Receivables / Loans Owed", value: assets.receivables },
+            { label: "🔻 Debts / Loans Payable", value: debtsVal }
         ];
         
-        doc.autoTable({
-            startY: finalY,
-            head: [["Asset / Liability Item", "Amount (PKR)"]],
-            body: assetRows,
-            theme: 'plain',
-            headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontSize: 10 },
-            margin: { left: 14, right: 14 },
-            alternateRowStyles: { fillColor: [249, 250, 251] }
-        });
+        for (let i = 0; i < detailItems.length; i++) {
+            const item = detailItems[i];
+            // Alternate row background
+            if (i % 2 === 0) {
+                doc.setFillColor(249, 250, 251);
+                doc.rect(14, yPos - 4, 182, 7, 'F');
+            }
+            doc.text(item.label, 20, yPos);
+            doc.text(window.formatPKR(item.value), 190, yPos, { align: "right" });
+            yPos += 7;
+        }
         
-        let tableEnd = doc.lastAutoTable.finalY + 8;
+        yPos = yPos + 10;
         
-        // Islamic quote and footer
-        doc.setFontSize(9);
+        // Islamic quote
         doc.setTextColor(100, 100, 100);
+        doc.setFontSize(9);
         doc.setFont("helvetica", "italic");
-        doc.text("“And those in whose wealth there is a recognized right for the needy and the deprived.”", 105, tableEnd + 5, { align: "center" });
-        doc.text("(Quran 70:24-25)", 105, tableEnd + 10, { align: "center" });
+        doc.text("“And those in whose wealth there is a recognized right for the needy and the deprived.”", 105, yPos, { align: "center" });
+        yPos = yPos + 6;
+        doc.text("(Quran 70:24-25)", 105, yPos, { align: "center" });
+        yPos = yPos + 8;
         
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
-        doc.text("This report is computer-generated based on user inputs. Please consult a qualified scholar for verification.", 105, tableEnd + 18, { align: "center" });
+        doc.text("This report is computer-generated based on user inputs. Please consult a qualified scholar for verification.", 105, yPos, { align: "center" });
         
-        // Add page number
+        // Footer with page number
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
-            doc.text(`Page ${i} of ${pageCount}`, 105, 287, { align: "center" });
+            doc.text(`Page ${i} of ${pageCount} | Generated by HSQDigitalHub.com`, 105, 287, { align: "center" });
         }
         
         // Save PDF
-        const fileName = `Zakat_Report_${now.toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
+        const fileName = `Zakat_Report_${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}-${now.getMinutes().toString().padStart(2,'0')}-${now.getSeconds().toString().padStart(2,'0')}.pdf`;
         doc.save(fileName);
+        
+        // Show success message
+        pdfBtn.innerHTML = '<i class="fas fa-check"></i> PDF Generated!';
+        setTimeout(() => {
+            pdfBtn.innerHTML = originalBtnText;
+        }, 2000);
         
     } catch (error) {
         console.error('PDF Generation Error:', error);
-        alert('Error generating PDF. Please try again.');
-    } finally {
-        // Restore button
+        alert('Error generating PDF: ' + error.message + '\n\nPlease check your internet connection and try again.');
         pdfBtn.innerHTML = originalBtnText;
+    } finally {
         pdfBtn.disabled = false;
     }
 }
@@ -139,7 +191,10 @@ async function generateZakatPDF() {
 function initPDFGenerator() {
     const pdfBtn = document.getElementById('pdfBtn');
     if (pdfBtn) {
-        pdfBtn.addEventListener('click', generateZakatPDF);
+        // Remove any existing listeners
+        const newBtn = pdfBtn.cloneNode(true);
+        pdfBtn.parentNode.replaceChild(newBtn, pdfBtn);
+        newBtn.addEventListener('click', generateZakatPDF);
     }
 }
 
