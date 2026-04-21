@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Zakat Calculator | Islamic Wealth & Nisab Tool</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- jsPDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-emerald-50 font-sans antialiased">
+
+  <div class="max-w-5xl mx-auto px-4 py-6 md:py-10">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="inline-block bg-emerald-700 text-white px-5 py-2 rounded-full text-sm font-semibold tracking-wide shadow-sm mb-3">
+        <i class="fas fa-calculator ml-1"></i> زکوٰۃ کیلکولیٹر
+      </div>
+      <h1 class="text-3xl md:text-4xl font-bold text-emerald-900 flex items-center justify-center gap-2 flex-wrap">
+        <i class="fas fa-hand-holding-heart text-emerald-600"></i> 
+        Zakat Calculator
+      </h1>
+      <p class="text-gray-600 mt-2 text-sm md:text-base">Compute your Zakat obligation according to Islamic principles (2.5% of net wealth above Nisab)</p>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Assets Card -->
+      <div class="bg-white rounded-2xl shadow-md border border-emerald-100 overflow-hidden">
+        <div class="bg-emerald-800 px-5 py-3 flex items-center gap-2">
+          <i class="fas fa-coins text-white text-lg"></i>
+          <h2 class="text-white font-semibold text-xl">Assets (مال)</h2>
+        </div>
+        <div class="p-5 space-y-4">
+          <div>
+            <label class="flex items-center gap-2 text-gray-700 font-medium mb-1"><i class="fas fa-money-bill-wave text-emerald-600 w-5"></i> Cash & Bank Savings (PKR)</label>
+            <input type="number" id="cash" value="250000" step="1000" class="asset-input w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-emerald-500 transition bg-gray-50">
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-gray-700 font-medium mb-1"><i class="fas fa-ring text-emerald-600"></i> Gold Value (PKR)</label>
+            <input type="number" id="gold" value="120000" step="5000" class="asset-input w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-emerald-500 bg-gray-50">
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-gray-700 font-medium mb-1"><i class="fas fa-gem text-emerald-600"></i> Silver Value (PKR)</label>
+            <input type="number" id="silver" value="80000" step="5000" class="asset-input w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-emerald-500 bg-gray-50">
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-gray-700 font-medium mb-1"><i class="fas fa-store text-emerald-600"></i> Business Inventory (PKR)</label>
+            <input type="number" id="inventory" value="350000" step="10000" class="asset-input w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-emerald-500 bg-gray-50">
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-gray-700 font-medium mb-1"><i class="fas fa-hand-holding-usd text-emerald-600"></i> Receivables / Loans Owed to You (PKR)</label>
+            <input type="number" id="receivables" value="45000" step="5000" class="asset-input w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-emerald-500 bg-gray-50">
+          </div>
+        </div>
+      </div>
+
+      <!-- Liabilities Card -->
+      <div class="bg-white rounded-2xl shadow-md border border-emerald-100 overflow-hidden">
+        <div class="bg-stone-700 px-5 py-3 flex items-center gap-2">
+          <i class="fas fa-hand-holding-heart text-white"></i>
+          <h2 class="text-white font-semibold text-xl">Liabilities (ذمہ داریاں)</h2>
+        </div>
+        <div class="p-5 space-y-6">
+          <div>
+            <label class="flex items-center gap-2 text-gray-700 font-medium mb-1"><i class="fas fa-file-invoice-dollar text-amber-700"></i> Debts / Loans Payable (PKR)</label>
+            <input type="number" id="debts" value="125000" step="5000" class="liability-input w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-emerald-500 bg-gray-50">
+          </div>
+          <div class="mt-4 bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-sm">
+            <div class="flex items-center gap-2 text-emerald-800 font-semibold">
+              <i class="fas fa-chart-line"></i> 
+              <span>Nisab Threshold (نصاب): <span class="font-mono font-bold">PKR 1,87,400</span></span>
+            </div>
+            <p class="text-gray-600 text-xs mt-1">Zakat becomes obligatory when net zakatable wealth meets or exceeds Nisab.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="bg-white rounded-2xl shadow-md border border-emerald-100 p-5 md:p-6 mb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <button id="refreshBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md flex items-center gap-2"><i class="fas fa-sync-alt"></i> Calculate / Refresh</button>
+        <button id="pdfBtn" class="bg-stone-800 hover:bg-stone-900 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md flex items-center gap-2"><i class="fas fa-file-pdf"></i> Generate PDF Report</button>
+      </div>
+
+      <div id="nisabWarning" class="hidden mb-5 p-3 rounded-xl border-l-8 border-amber-500 bg-amber-50 text-amber-800 text-sm flex items-start gap-3">
+        <i class="fas fa-exclamation-triangle text-amber-600 text-lg mt-0.5"></i>
+        <div><span class="font-bold">Nisab not met:</span> Your net zakatable wealth is below the Nisab threshold of PKR 1,87,400. Zakat is not obligatory this year, but voluntary charity (Sadaqah) is always encouraged.</div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200">
+          <div class="text-gray-500 text-sm flex items-center gap-1"><i class="fas fa-chart-simple"></i> Total Assets</div>
+          <div class="text-2xl md:text-3xl font-bold text-emerald-800" id="totalAssetsDisplay">PKR 0</div>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200">
+          <div class="text-gray-500 text-sm flex items-center gap-1"><i class="fas fa-minus-circle"></i> Less Liabilities</div>
+          <div class="text-2xl md:text-3xl font-bold text-stone-700" id="liabilitiesDisplay">PKR 0</div>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200">
+          <div class="text-gray-500 text-sm flex items-center gap-1"><i class="fas fa-scale-balanced"></i> Net Zakatable Wealth</div>
+          <div class="text-2xl md:text-3xl font-bold text-emerald-800" id="netWealthDisplay">PKR 0</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="zakat-highlight rounded-xl p-5 shadow-sm">
+          <div class="flex items-center gap-2 text-emerald-800 font-semibold text-lg"><i class="fas fa-star-of-life"></i> Zakat Due (2.5%)</div>
+          <div class="text-3xl md:text-4xl font-extrabold text-emerald-900 my-2" id="zakatDueDisplay">PKR 0</div>
+          <div class="text-sm text-emerald-700"><i class="far fa-calendar-alt"></i> Annual obligation · Blessed charity</div>
+        </div>
+        <div class="bg-white border border-emerald-200 rounded-xl p-5 shadow-sm">
+          <div class="flex items-center gap-2 text-stone-600 font-semibold"><i class="fas fa-calendar-week"></i> Monthly Equivalent (Sadaqah / Planning)</div>
+          <div class="text-2xl font-bold text-stone-800 mt-2" id="monthlyDisplay">PKR 0</div>
+          <div class="text-xs text-gray-500 mt-1">Zakat Due ÷ 12 — You may give in installments if needed.</div>
+          <div class="mt-3 pt-2 border-t border-emerald-100 text-xs text-emerald-700 flex justify-between"><span>Zakat Rate: 2.5%</span> <span>Nisab: PKR 1,87,400</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center text-gray-500 text-xs border-t border-emerald-200 pt-6 mt-2">
+      <i class="fas fa-mosque"></i> “And establish prayer and give Zakat…” (Quran 2:43) — This tool provides estimate; consult your scholar for complex scenarios.
+    </div>
+  </div>
+
+  <!-- JavaScript Files -->
+  <script src="js/calculator.js"></script>
+  <script src="js/pdf-generator.js"></script>
+</body>
+</html>
